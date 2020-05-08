@@ -30,6 +30,9 @@
 #define ILI9341_VSCRSADD 0x37
 #define ILI9341_GREY 0x5AEB
 
+//--- Prototypes
+void clearScreen();
+
 //--- ST7735 TFT, 1.8'' 128x160, using MAPLE-Mini-SPI-Interface #1,  
 //--- these are the connections for the MapleMini to display
 
@@ -48,6 +51,8 @@ Adafruit_ILI9341_STM tft = Adafruit_ILI9341_STM(cs, dc, rst); // Invoke custom l
 #define   TOP_FIXED_AREA 	16 	// Number of lines in top fixed area (lines counted from top of screen)
 #define   MAX_X				    160 // for landscape mode 
 #define   MAX_Y 			    128 // for landscape mode 
+
+#define   VEROSE_OUTPUT   false
 
 uint16_t  yStart      =   TOP_FIXED_AREA;                           // The initial y coordinate of the top of the scrolling area
 uint16_t  yArea       =   MAX_Y - TOP_FIXED_AREA - BOT_FIXED_AREA;  // --- we are using our display in landscape mode (setrotation=0, Y=128 X=160) 
@@ -72,32 +77,32 @@ void setup()
   tft.begin();
   tft.setRotation(1);    //--- special modes in this library: 0..3 and 7, see setRotion in lib
   
-  //tft.invertDisplay(true);  // nur Farben 
+  //tft.invertDisplay(true);  //--- only colors 
   
-  //tft.fillScreen(ILI9341_BLACK);
+  //--- fillScreen from 0 to 128-1 => last pixels not set!
+  //--- fillScreen2 from 1 to 128 => last pixels set!
   tft.fillScreen2(ILI9341_BLACK);
   
   //--- define scroll area
   setupScrollArea(TOP_FIXED_AREA, BOT_FIXED_AREA);
   
   //-- start serial 
-  Serial.begin(115200);
+  //Serial.begin(115200);
   
   tft.setTextColor(ILI9341_WHITE, ILI9341_RED);  
   tft.fillRect(0,0,128,16, ILI9341_BLUE);
-  
 
-  delay(5000);
-
-  //tribute to not _AX
+  //--- tribute not beeing _GFX, but _GFX_AS
   tft.drawCentreString("Serial Terminal 115200 ",64,0,2);
 
   // Change colour for scrolling zone
   tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
 
-  //--- prefill the array
+  //--- prefill blankline-array
   for (byte i = 0; i<18; i++) 
-	blank[i] = 0;
+	  blank[i] = 0;
+
+  //Serial.print("Setup.yStart: "); Serial.println(yStart);
 }
 //---------------------------------------------------------------------------------
 void loop(void) 
@@ -116,18 +121,45 @@ void loop(void)
   {
 		//--- first byte of incoming serial data available (or -1 if no data is available). Data type: int.
     data = Serial.read();
-    //Serial.print("E: ");    
+    if (VEROSE_OUTPUT) 
+    {
+      Serial.print("E: "); Serial.println(data,DEC) ;  
+    }
+    
     if (data == '\r' || xPos>(160-9) || byte(data) == 10 )     //231
     {
       xPos = 0;
-      yDraw = scroll_line(); // It takes about 13ms to scroll 16 pixel lines
-      Serial.println(yDraw);
+      
+      yDraw = scroll_line(); // It takes about 13ms to scroll 16 pixel lines      
+    
+      if (VEROSE_OUTPUT) 
+      {
+        Serial.print("loop.yDraw: ");Serial.println(yDraw);
+      }      
     }
+
+    // "?" = clearScreen
+    if (data == 63)
+    {
+      clearScreen();
+      data = 0; 
+    }
+
+    //--- all other ascii chars print
     if (data > 31 && data < 128) 
     {
+      if (VEROSE_OUTPUT) 
+      {
+        Serial.print("loop.xPos: ");Serial.print(xPos);Serial.print("\tloop.yDraw: \t");Serial.println(yDraw);
+      }
       xPos += tft.drawChar(data, xPos, yDraw, 2);
       
-      blank[(18+(yStart-TOP_FIXED_AREA)/TEXT_HEIGHT)%19] = xPos; // Keep a record of line lengths
+      if (VEROSE_OUTPUT) 
+      {  
+        Serial.print("loop.xPos_new: \t");Serial.println(xPos);
+      }
+      
+      blank[(18+ (yStart-TOP_FIXED_AREA)/TEXT_HEIGHT)%19] = xPos; // Keep a record of line lengths
     }
     //change_colour = 1; // Line to indicate buffer is being emptied
   }
@@ -138,7 +170,9 @@ void loop(void)
 //---------------------------------------------------------------------------------
 int scroll_line() 
 {
-  int yTemp = yStart; // Store the old yStart, this is where we draw the next line
+  int yTemp = yDraw-TEXT_HEIGHT; //yStart; // Store the old yStart, this is where we draw the next line
+  
+  if (yTemp <=0) yTemp = MAX_Y - BOT_FIXED_AREA - TEXT_HEIGHT; 
 
   // Use the record of line lengths to optimise the rectangle size we need to erase the top line
   tft.fillRect(0, yStart, blank[(yStart-TOP_FIXED_AREA)/TEXT_HEIGHT], TEXT_HEIGHT, ILI9341_BLACK);
@@ -146,20 +180,28 @@ int scroll_line()
   // Change the top of the scroll area
   yStart += TEXT_HEIGHT;
   
-  // The value must wrap around as the screen memory is a circular buffer
-  //if (yStart >= 128 - BOT_FIXED_AREA) 
-  if (yStart >= 128 - 16 - BOT_FIXED_AREA) 
-    yStart = TOP_FIXED_AREA + (yStart - 128-16 + BOT_FIXED_AREA);
-  
-  // Now we can scroll the display
+  //--- the value must wrap around as the screen memory is a circular buffer  
+  if (yStart >= 128 - BOT_FIXED_AREA) 
+  {    
+    yStart = TOP_FIXED_AREA + (yStart - 128-16 + BOT_FIXED_AREA); 
+    
+    if (VEROSE_OUTPUT) 
+    {  
+      Serial.print("ScrollLine.yStart: "); Serial.println(yStart);            
+    }
+  }
+  //--- now we can scroll the display
   scrollAddress(yStart);
+
+  //--- Serial.print("ScrollLine.yTemp: "); Serial.println(yTemp);    
+  
   return  yTemp;
 }
 
 //---------------------------------------------------------------------------------
 // Setup a portion of the screen for vertical scrolling
 //---------------------------------------------------------------------------------
-// We are using a hardware feature of the display, so we can only scroll in portrait orientation
+//-- we are using a hardware feature of the display, so we can only scroll in portrait orientation
 void setupScrollArea(uint16_t TFA, uint16_t BFA) 
 {
   tft.writecommand(ILI9341_VSCRDEF); // Vertical scroll definition
@@ -179,4 +221,25 @@ void scrollAddress(uint16_t VSP)
   tft.writecommand(ILI9341_VSCRSADD); // Vertical scrolling start address
   tft.writedata(VSP>>8);
   tft.writedata(VSP);
+}
+
+void clearScreen()
+{
+  //--- fillScreen from 0 to 128-1 => last pixels not set!
+  //--- fillScreen2 from 1 to 128 => last pixels set!
+  tft.fillScreen2(ILI9341_BLACK);
+    
+  //--- define scroll area
+  setupScrollArea(TOP_FIXED_AREA, BOT_FIXED_AREA);
+  
+  tft.setTextColor(ILI9341_WHITE, ILI9341_RED);  
+  tft.fillRect(0,0,128,16, ILI9341_BLUE);
+
+  //--- tribute not beeing _GFX, but _GFX_AS
+  tft.drawCentreString("Serial Terminal 115200 ",64,0,2);
+
+  // Change colour for scrolling zone
+  tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+
+  yDraw =   MAX_Y - BOT_FIXED_AREA - TEXT_HEIGHT;
 }
