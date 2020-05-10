@@ -28,9 +28,9 @@ Todo:
 
 Expand from  
  [Arduino_STM32](https://github.com/rogerclarkmelbourne/Arduino_STM32) to  [stm32duino](https://github.com/stm32duino/Arduino_Core_STM32]-Arduino_Core_STM32[/url]-version ...
- 
-``` 
+
 <small>
+``` 
 /*
  * Blink without delay and UART Test
  *
@@ -96,6 +96,5 @@ void loop()
 }
 
 // ===> will be working on all Maple Hardware-Serial-Ports!
-</small>
 ```
- 
+</small>
