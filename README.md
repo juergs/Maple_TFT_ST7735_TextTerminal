@@ -29,8 +29,8 @@ Todo:
 Expand from  
  [Arduino_STM32](https://github.com/rogerclarkmelbourne/Arduino_STM32) to  [stm32duino](https://github.com/stm32duino/Arduino_Core_STM32]-Arduino_Core_STM32[/url]-version ...
  
- 
-`/*
+``` 
+/*
  * Blink without delay and UART Test
  *
  * https://github.com/stm32duino/wiki/wiki/API#hardwareserial
@@ -42,15 +42,8 @@ int previousMillis = 0;        // will store the last time the LED was updated
 int interval = 500;            // interval at which to blink (in milliseconds)
 uint32_t counter = 0;
 
-  //                      RX    TX
-  //HardwareSerial Serial2(PA3, PA2);
-  
-  HardwareSerial Serial2(USART2, SERIAL_8N1 );
-  
-  //HardwareSerial Serial3(PB11, PB10);
-  
-  HardwareSerial Serial3(USART3, SERIAL_8N1 );
-
+HardwareSerial Serial2(USART2, SERIAL_8N1 );
+HardwareSerial Serial3(USART3, SERIAL_8N1 );
 
 void setup() {
   // Set up the built-in LED pin as output:
@@ -82,8 +75,7 @@ void loop()
     Serial.print("Counter: ");
     Serial.print(counter);
     Serial.println(" - Hello USB-Serial 0!");
-
-    
+ 
     Serial1.print("Counter: ");
     Serial1.print(counter);
     Serial1.println(" - Hello UART 1!");
@@ -97,10 +89,11 @@ void loop()
     Serial3.println(" - Hello UART 3!");
 
     counter ++;
-    // If the LED is off, turn it on, and vice-versa:
+    //--- if the LED is off, turn it on, and vice-versa:
     digitalWrite(PC13,!digitalRead(PC13));
     }
 }
 
-// ===> will be working on all Maple Hardware-Serial-Ports!` 
+// ===> will be working on all Maple Hardware-Serial-Ports!
+```
  
