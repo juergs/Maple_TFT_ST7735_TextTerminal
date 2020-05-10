@@ -1,7 +1,7 @@
 # Maple_TFT_ST7735_TextTerminal
 Have had some difficulties implementing this Terminall as debug solution using this serial-to-tft app.
 Because theree are some various implemtations for TFT ST7735 models. But thes models may variy on their hardware properties.
-So this is my solution with adapted Adafruit-Libs for this special case.
+So this is my solution with adapted Adafruit-Libs for this particular case (without SD-card-slot).
 
 Implementation and setup for 128x160 Pixel Display with 1.8'' size with Maple-Mini using SPI_1 
 
