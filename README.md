@@ -96,3 +96,16 @@ void loop()
 
 // ===> will be working on all Maple Hardware-Serial-Ports!
 ```
+Fast way to wait on serial settle:
+```
+void setup() {
+   2   ...
+   3   Serial.begin(115200); // or other baudrate
+   4   #define TIMEOUT 2000
+   5   long startTime = millis();
+   6   // wait up to TIMEOUT for the host serial monitor, then proceed
+   7   while ( !Serial && millis() - startTime < TIMEOUT ); 
+   8   Serial.println("Test Maple Mini");
+   9   ...
+  10 }
+```
