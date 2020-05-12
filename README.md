@@ -109,3 +109,6 @@ void setup() {
    9   ...
   10 }
 ```
+
+
+See also: [arduino-terminal](https://tech.scargill.net/an-arduino-terminal/) with ESP8266 and ST7735.
